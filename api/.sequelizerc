@@ -1,0 +1,9 @@
+// Tells sequelize-cli (yarn migrate / yarn seed:all) where the user / role / scope tables live
+const path = require('path');
+
+module.exports = {
+  config: path.resolve('communications', 'config', 'config.js'),
+  'models-path': path.resolve('communications', 'models'),
+  'migrations-path': path.resolve('communications', 'migrations'),
+  'seeders-path': path.resolve('communications', 'seeders'),
+};

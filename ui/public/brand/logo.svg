@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="44" viewBox="0 0 220 44" role="img" aria-label="Developer Activity">
+  <rect x="2" y="4" width="36" height="36" rx="9" fill="#4f6bed"/>
+  <path d="M14 15l-6 7 6 7M26 15l6 7-6 7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.5 29l3-14" stroke="#9fb1ff" stroke-width="2.4" stroke-linecap="round"/>
+  <text x="48" y="20" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="15" font-weight="700" fill="#8fa3c8" letter-spacing=".2">Developer</text>
+  <text x="48" y="37" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="15" font-weight="700" fill="#4f6bed" letter-spacing=".2">Activity</text>
+</svg>

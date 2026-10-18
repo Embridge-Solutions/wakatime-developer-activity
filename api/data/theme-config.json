@@ -1,0 +1,13 @@
+{
+  "logoUrl": "/brand/logo.svg",
+  "allowedThemeIds": [
+    "yellow",
+    "cyan",
+    "purple",
+    "green",
+    "orange",
+    "blue"
+  ],
+  "defaultThemeId": "yellow",
+  "customThemes": []
+}

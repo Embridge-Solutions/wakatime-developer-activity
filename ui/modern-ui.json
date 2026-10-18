@@ -1,0 +1,35 @@
+{
+  "style": "default",
+  "path": "components/modern-ui",
+  "theme": "blue",
+  "typescript": true,
+  "tailwind": true,
+  "framework": "next",
+  "components": [
+    {
+      "name": "button",
+      "version": "latest",
+      "installedAt": "2026-03-19T07:21:29.865Z"
+    },
+    {
+      "name": "calendar",
+      "version": "latest",
+      "installedAt": "2026-03-19T07:21:30.199Z"
+    },
+    {
+      "name": "popover",
+      "version": "latest",
+      "installedAt": "2026-03-19T07:21:30.517Z"
+    },
+    {
+      "name": "date-picker",
+      "version": "latest",
+      "installedAt": "2026-03-19T07:23:42.010Z"
+    }
+  ],
+  "aliases": {
+    "cn": "@/lib/utils",
+    "hook": "@/hooks"
+  },
+  "tailwindVersion": "v4"
+}

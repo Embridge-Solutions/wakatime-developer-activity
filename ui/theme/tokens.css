@@ -1,0 +1,237 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  DESIGN TOKENS
+ *  ---------------------------------------------------------------------------
+ *  The structure of the look: ramps, radii, shadows, status colors, modals.
+ *
+ *  ▶ Per-customer colors (logo color, button color, sidebar, canvas) are NOT
+ *    set here — they come from config/brand.config.ts and override the
+ *    defaults below at runtime. Edit that file for a new client.
+ *
+ *    1. Brand       – ESAB yellow ramp (400 = exact logo yellow #FCE300)
+ *    2. Graphite    – the neutral ramp; Tailwind slate/gray/zinc point here,
+ *                     so existing `text-slate-700`, `bg-gray-50`… follow it
+ *    3. Status      – OEE machine states (running / idle / down / offline)
+ *    4. Shape       – radius + elevation (shadows)
+ *    5. Fonts       – family *mapping* (the families are picked in fonts.ts)
+ *    6. App shell   – sidebar / top bar / workspace surfaces
+ *    7. Components  – shadcn semantic colors (card, input, ring…)
+ *    8. Motif       – the slanted logo bar, reused as accent marks
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* `static` keeps every token emitted, even ones only referenced via var(). */
+@theme static {
+  /* ── 1. Brand · ESAB yellow ─────────────────────────────────────────────
+     On light surfaces use 600+ for text/icons; 300–400 is for fills that
+     carry dark (graphite-950) text. */
+  --color-brand-50: #fffde6;
+  --color-brand-100: #fff9bf;
+  --color-brand-200: #fff380;
+  --color-brand-300: #ffeb40;
+  --color-brand-400: #fce300;
+  --color-brand-500: #e3cb00;
+  --color-brand-600: #bfa700;
+  --color-brand-700: #8f7c00;
+  --color-brand-800: #615300;
+  --color-brand-900: #3d3400;
+  --color-brand-950: #242000;
+
+  /* ── 2. Graphite · neutral ramp (logo black, softened) ──────────────── */
+  --color-graphite-50: #f7f7f6;
+  --color-graphite-100: #eeeeec;
+  --color-graphite-200: #e0e0dd;
+  --color-graphite-300: #c8c8c4;
+  --color-graphite-400: #a1a19c;
+  --color-graphite-500: #7b7b76;
+  --color-graphite-600: #5d5d59;
+  --color-graphite-700: #454542;
+  --color-graphite-800: #2d2d2b;
+  --color-graphite-900: #1e1e1d;
+  --color-graphite-950: #141414;
+
+  /* Route Tailwind's stock neutrals through graphite. */
+  --color-slate-50: var(--color-graphite-50);
+  --color-slate-100: var(--color-graphite-100);
+  --color-slate-200: var(--color-graphite-200);
+  --color-slate-300: var(--color-graphite-300);
+  --color-slate-400: var(--color-graphite-400);
+  --color-slate-500: var(--color-graphite-500);
+  --color-slate-600: var(--color-graphite-600);
+  --color-slate-700: var(--color-graphite-700);
+  --color-slate-800: var(--color-graphite-800);
+  --color-slate-900: var(--color-graphite-900);
+  --color-slate-950: var(--color-graphite-950);
+
+  --color-gray-50: var(--color-graphite-50);
+  --color-gray-100: var(--color-graphite-100);
+  --color-gray-200: var(--color-graphite-200);
+  --color-gray-300: var(--color-graphite-300);
+  --color-gray-400: var(--color-graphite-400);
+  --color-gray-500: var(--color-graphite-500);
+  --color-gray-600: var(--color-graphite-600);
+  --color-gray-700: var(--color-graphite-700);
+  --color-gray-800: var(--color-graphite-800);
+  --color-gray-900: var(--color-graphite-900);
+  --color-gray-950: var(--color-graphite-950);
+
+  --color-zinc-50: var(--color-graphite-50);
+  --color-zinc-100: var(--color-graphite-100);
+  --color-zinc-200: var(--color-graphite-200);
+  --color-zinc-300: var(--color-graphite-300);
+  --color-zinc-400: var(--color-graphite-400);
+  --color-zinc-500: var(--color-graphite-500);
+  --color-zinc-600: var(--color-graphite-600);
+  --color-zinc-700: var(--color-graphite-700);
+  --color-zinc-800: var(--color-graphite-800);
+  --color-zinc-900: var(--color-graphite-900);
+  --color-zinc-950: var(--color-graphite-950);
+
+  /* ── 3. Status · OEE machine states ─────────────────────────────────── */
+  --color-status-running: #1f9d55;
+  --color-status-idle: #e8a317;
+  --color-status-down: #d64545;
+  --color-status-offline: var(--color-graphite-400);
+  --color-status-info: #2f6fdb;
+
+  /* Workflow tones (help calls, approvals). Mapped onto the OEE states so a
+     red call card means the same thing as a red machine. */
+  --color-tone-open: var(--color-status-down);
+  --color-tone-progress: var(--color-status-idle);
+  --color-tone-review: var(--color-graphite-700);
+  --color-tone-done: var(--color-status-running);
+
+  /* ── 4. Shape · tighter, industrial radii + soft graphite shadows ───── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+
+  --shadow-2xs: 0 1px 0 rgb(20 20 20 / 0.04);
+  --shadow-xs: 0 1px 2px rgb(20 20 20 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(20 20 20 / 0.06), 0 1px 3px rgb(20 20 20 / 0.05);
+  --shadow-md: 0 2px 4px -1px rgb(20 20 20 / 0.06), 0 4px 10px -2px rgb(20 20 20 / 0.08);
+  --shadow-lg: 0 4px 6px -2px rgb(20 20 20 / 0.05), 0 12px 24px -6px rgb(20 20 20 / 0.12);
+  --shadow-xl: 0 8px 12px -6px rgb(20 20 20 / 0.08), 0 24px 40px -10px rgb(20 20 20 / 0.18);
+  --shadow-2xl: 0 32px 64px -16px rgb(20 20 20 / 0.28);
+
+  /* Large-screen breakpoints for shop-floor TVs (live screens). */
+  --breakpoint-3xl: 120rem; /* 1920px — Full-HD TV */
+  --breakpoint-4xl: 160rem; /* 2560px — QHD / 4K at 150% */
+
+  /* ── 5. Fonts · families come from fonts.ts via CSS variables ───────── */
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-numeric), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  /* ── 6. App shell ───────────────────────────────────────────────────────
+     These are the defaults. utils/theme.ts can override them at runtime with
+     an optional preset, but the default "ESAB Forge" theme reads them here. */
+  --theme-primary: var(--color-brand-400);
+  --theme-gradient-from: var(--color-brand-300);
+  --theme-gradient-to: var(--color-brand-400);
+  --theme-glow: rgb(252 227 0 / 0.12);
+  --theme-glow-border: rgb(252 227 0 / 0.38);
+  --theme-sidebar-bg: var(--color-graphite-950);
+  --theme-topbar-bg: var(--color-graphite-900);
+  --theme-border: rgb(255 255 255 / 0.08);
+  --theme-active-text: var(--color-graphite-950);
+  --theme-sidebar-text: var(--color-graphite-300);
+  --theme-topbar-text: var(--color-graphite-50);
+
+  --app-canvas: #f3f3f1; /* workspace behind the cards */
+  --app-row-hover: var(--color-graphite-100);
+
+  /* Modals, side panels, confirmations — see "MODALS" in app/globals.css. */
+  --modal-overlay: rgb(20 20 20 / 0.46);
+  --modal-surface: #ffffff;
+  --modal-muted: var(--color-graphite-50);
+  --modal-radius: 16px;
+  --modal-shadow: 0 24px 64px -12px rgb(20 20 20 / 0.32), 0 2px 6px rgb(20 20 20 / 0.06);
+  --modal-side-width: 560px;
+
+  /* Calendars (components/modern-ui/calendar.tsx). */
+  --datepicker-selection: var(--action);
+  --datepicker-today: var(--color-brand-700);
+  --datepicker-header: var(--color-graphite-900);
+
+  /* Action color — every Add / Save / Submit button, checkbox, active page
+     number and link inside the workspace. Brand yellow stays on the shell
+     (sidebar, top bar, login); change the four lines below to re-color all
+     buttons at once. */
+  --action: #1e1e1d;            /* graphite — matches the black of the logo */
+  --action-hover: #000000;
+  --action-foreground: #ffffff;
+  --action-soft: rgb(252 227 0 / 0.22);  /* brand-yellow tint: selected items, focus glow */
+
+  /* ── 7. Components (shadcn semantic colors) ─────────────────────────── */
+  --radius: var(--radius-lg);
+  --background: #ffffff;
+  --foreground: var(--color-graphite-900);
+  --card: #ffffff;
+  --card-foreground: var(--color-graphite-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--color-graphite-900);
+  --primary: var(--action);
+  --primary-foreground: var(--action-foreground);
+  --secondary: var(--color-graphite-100);
+  --secondary-foreground: var(--color-graphite-900);
+  --muted: var(--color-graphite-100);
+  --muted-foreground: var(--color-graphite-500);
+  --accent: var(--color-brand-100);
+  --accent-foreground: var(--color-graphite-950);
+  --destructive: var(--color-status-down);
+  --border: var(--color-graphite-200);
+  --input: var(--color-graphite-300);
+  --ring: var(--action);  /* focus ring on white surfaces — yellow is too faint */
+
+  --chart-1: var(--color-graphite-800);
+  --chart-2: var(--color-brand-500);
+  --chart-3: var(--color-status-info);
+  --chart-4: var(--color-status-running);
+  --chart-5: var(--color-status-down);
+
+  --sidebar: var(--theme-sidebar-bg);
+  --sidebar-foreground: var(--theme-sidebar-text);
+  --sidebar-primary: var(--theme-primary);
+  --sidebar-primary-foreground: var(--theme-active-text);
+  --sidebar-accent: rgb(255 255 255 / 0.06);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: var(--theme-border);
+  --sidebar-ring: var(--color-brand-500);
+
+  /* Datepicker colors */
+  --datepicker-selection: #10b981;
+  --datepicker-header: #0f172a;
+  --datepicker-today: #10b981;
+}
+
+/* ── 8. Motif · the slanted bar from the ESAB logo ─────────────────────────
+   `forge-marker`    → small vertical slanted bar (active nav, list accents)
+   `forge-underline` → slanted bar under a heading                           */
+@utility forge-marker {
+  display: block;
+  width: 4px;
+  height: 18px;
+  background: var(--theme-primary);
+  clip-path: polygon(0 22%, 100% 0, 100% 78%, 0 100%);
+}
+
+@utility forge-underline {
+  position: relative;
+  padding-bottom: 6px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 32px;
+    height: 4px;
+    background: var(--theme-primary);
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+}
