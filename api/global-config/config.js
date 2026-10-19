@@ -49,4 +49,14 @@ module.exports = [
     path: '/activity',
     fileName: 'activity-services',
   },
+  {
+    serviceName: 'mail',
+    path: '/mail',
+    fileName: 'mail-services',
+  },
+  {
+    serviceName: 'security',
+    path: '/security',
+    fileName: 'security-services',
+  },
 ];

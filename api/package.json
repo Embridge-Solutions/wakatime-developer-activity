@@ -27,6 +27,7 @@
     "mssql": "^12.1.1",
     "multer": "^2.0.2",
     "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.1",
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
     "tedious": "^19.1.3"

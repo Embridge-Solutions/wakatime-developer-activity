@@ -19,8 +19,10 @@ Node.js + Express backend: login, developers, WakaTime collection (nightly + man
    sql/03_E2M_WakaTime_Sync_Procedures.sql
    sql/04_E2M_Activity_Dashboard_Procedures.sql
    sql/05_E2M_Access_Scopes_Roles.sql        ← after step 4 (needs the login tables)
+   sql/06_E2M_Mail.sql                       ← mail settings + mail history
+   sql/07_E2M_Security_Settings.sql          ← token protection password + developer self-service switch
    ```
-   All four are re-runnable. On a database created with an earlier 01, re-running 01 adds the AI columns and new tables in place.
+   All scripts are re-runnable. On a database created with an earlier 01, re-running 01 adds the AI columns and new tables in place.
 6. **Start** — `npm run dev` (nodemon) or `npm start`. Check `GET /health`.
 7. `npm test` — WakaTime mapping tests (no DB or API needed).
 
@@ -133,3 +135,49 @@ unless they have `activity_viewall`.
 | Each developer's projects: repository + last activity (refreshed every 10 min → "working now") | `E2M_Waka_Project_T` |
 | Commit messages, branch, author, coding time (repositories connected in WakaTime) | `E2M_Waka_Commit_T` |
 | Teams and members (a user in many teams) | `E2M_Team_M`, `E2M_Team_User_T` |
+
+## Token protection (Settings › Security)
+
+- **Token protection password** — needed to set, replace or remove any developer's WakaTime token (Tokens screen,
+  new-user wizard). Stored only as a bcrypt hash in `E2M_Security_Setting_M`. Until it is set, no token can be changed.
+  Changing it needs the current one; a Super Admin who lost it can use their own login password instead.
+  5 wrong tries → locked for 15 minutes.
+- **Developers may update their own token** (on/off) — on Profile › My WakaTime, confirmed with their login password.
+- Every token change and password change is mailed (see below).
+
+| Method | Path | Scope |
+|---|---|---|
+| GET | `/security/getSecurity` | any login (never returns the password or hash) |
+| PUT | `/security/setTokenPassword` `{ currentPassword \| loginPassword, newPassword, confirmPassword }` · `/security/setDeveloperSelfToken` `{ enabled }` | `settings_update` |
+
+Token calls take the password in the body: `PUT /developer/updateApiKey/:id { apiKey, confirmPassword }`,
+`DELETE /developer/removeApiKey/:id { confirmPassword }`, `POST /user/addUser { …, wakatime: { apiKey, confirmPassword } }`,
+`PUT /developer/updateMyApiKey { apiKey, loginPassword }`.
+
+## Mails
+
+| Mail | When | To |
+|---|---|---|
+| Weekly — developer | Settings › Weekly Reports (default **Monday 09:30 IST**), previous Mon–Sun | each tracked developer — **only their own data**, incl. time and % of their week per project |
+| Weekly — team | same run | users with `activity_viewall` or a Super Admin role (+ extra addresses) — **whole team**, incl. % of team time per project and per developer |
+| Welcome | when a user is created; again from the Users list | the new user — login, username, numbered next steps (password, WakaTime plugin, timezone, token → Profile › My WakaTime) |
+| WakaTime token changed | a token is set, replaced or removed (Tokens screen, new user, My WakaTime) | every Super Admin + that developer |
+| Token protection password set / changed | Settings › Security | every Super Admin |
+
+**SMTP is configured only in `api/.env`** (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`,
+`MAIL_FROM_NAME`, `MAIL_FROM_ADDRESS`, `APP_URL` — see `env.txt`). The password is never stored in the database,
+never sent to the browser and never logged; Settings › Mail Server shows only status, server, security, masked account and sender, tests the connection and sends test mails.
+The database (`E2M_Mail_Setting_M`) only holds non-secret options: schedule, recipients, notes.
+
+**No duplicate mails:** `PRC_Claim_Mail_Send` reserves each (mail, week, recipient) under a lock + unique index before
+sending — a second run, a second click or a second server only sends to people who did not get that week's mail yet
+("Send again to everyone" overrides on purpose).
+
+| Method | Path | Scope |
+|---|---|---|
+| GET | `/mail/getSettings` · `/mail/getSmtpStatus` · `/mail/getMailLogs` · POST `/mail/preview` | `settings_view` |
+| PUT | `/mail/updateSetting/:mailType` · POST `/mail/testSmtp` · `/mail/sendTest` · `/mail/sendWeeklyNow` | `settings_update` |
+| POST | `/mail/sendWelcome/:userId` | `user_create` / `user_update` |
+| GET/POST/PUT | `/developer/getMyDeveloper` · `verifyMyApiKey` · `updateMyApiKey` | any login — own developer only |
+| GET | `/wakatime/getConfig` | `settings_view` / `sync_view` |
+

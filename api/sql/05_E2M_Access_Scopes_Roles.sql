@@ -20,6 +20,7 @@
      token_view|update                   WakaTime tokens
      sync_view|run                       Data Sync (history / run now)
      appearance_update                   Organisation theme & logo
+     settings_view|update                Settings: mail server status, weekly report & welcome mail
 
    Default roles (created when missing; existing roles keep their other scopes):
      Super_Admin  every scope (also always full access in the API, by role name)
@@ -67,7 +68,9 @@ INSERT INTO @scopes (scope, description) VALUES
 	(N'token_update',          N'Set, test and remove WakaTime tokens'),
 	(N'sync_view',             N'View data sync history'),
 	(N'sync_run',              N'Run the WakaTime data sync now'),
-	(N'appearance_update',     N'Change the organisation theme and logo');
+	(N'appearance_update',     N'Change the organisation theme and logo'),
+	(N'settings_view',         N'View settings (mail server status, mail history)'),
+	(N'settings_update',       N'Change mail settings, send test / report mails');
 
 INSERT INTO dbo.E2M_Scopes (scope, description, isActive, createdAt, updatedAt)
 SELECT S.scope, S.description, 0, GETDATE(), GETDATE()
@@ -109,7 +112,8 @@ CROSS JOIN (SELECT scope FROM dbo.E2M_Scopes WHERE scope IN (
 	N'activity_viewall', N'user_view', N'user_create', N'user_update', N'user_delete',
 	N'role_view', N'role_create', N'role_update', N'role_delete',
 	N'team_view', N'team_create', N'team_update', N'team_delete',
-	N'token_view', N'token_update', N'sync_view', N'sync_run', N'appearance_update')) S;
+	N'token_view', N'token_update', N'sync_view', N'sync_run', N'appearance_update',
+	N'settings_view', N'settings_update')) S;
 
 -- Admin: everything except managing roles
 INSERT INTO @map (role, scope)
@@ -118,7 +122,8 @@ SELECT N'Admin', scope FROM (VALUES
 	(N'report_view'), (N'report_export'), (N'activity_viewall'),
 	(N'user_view'), (N'user_create'), (N'user_update'), (N'user_delete'), (N'role_view'),
 	(N'team_view'), (N'team_create'), (N'team_update'), (N'team_delete'),
-	(N'token_view'), (N'token_update'), (N'sync_view'), (N'sync_run'), (N'appearance_update')
+	(N'token_view'), (N'token_update'), (N'sync_view'), (N'sync_run'), (N'appearance_update'),
+	(N'settings_view'), (N'settings_update')
 ) V (scope);
 
 -- Developer: own data only

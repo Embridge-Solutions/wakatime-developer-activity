@@ -27,6 +27,8 @@
                03_E2M_WakaTime_Sync_Procedures.sql
                04_E2M_Activity_Dashboard_Procedures.sql
                05_E2M_Access_Scopes_Roles.sql   (after `npm run migrate` — needs E2M_Scopes / E2M_Role)
+               06_E2M_Mail.sql                  (mail settings + log; SMTP itself is only in .env)
+               07_E2M_Security_Settings.sql     (token protection password — bcrypt hash only)
    Re-runnable.
 ============================================================================= */
 

@@ -181,6 +181,12 @@ const ROUTE_TO_SCOPE_MAP: Record<string, string> = {
   "/role": "role",
   "/wakatime-tokens": "token",
   "/data-sync": "sync",
+  "/mail-server": "settings",
+  "/weekly-report": "settings",
+  "/welcome-mail": "settings",
+  "/mail-history": "settings",
+  "/data-collection": "settings",
+  "/security-settings": "settings",
 };
 /**
  * Check if the current route path is accessible by the user
@@ -194,6 +200,7 @@ export function isRouteAccessible(pathname: string): boolean {
     "/change-password",
     "/appearance", // every user picks their own theme; admin section is gated inside
     "/start",
+    "/my-wakatime", // every user manages their own token
   ];
   if (alwaysAllowed.some((r) => pathname.startsWith(r))) return true;
   // Find matching scope for this route

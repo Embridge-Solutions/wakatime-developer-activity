@@ -13,6 +13,9 @@ const logger = require('../../../utils/logger');
 const { sql, execProc } = require('../../../utils/procedure');
 const { verifyAndEncrypt, RESULT: DEVELOPER_RESULT } = require('../../developer-services/controller/developer');
 const { idsJson } = require('../../team-services/controller/team');
+const { sendWelcomeMail } = require('../../mail-services/helpers/welcome');
+const { sendTokenChangedMail } = require('../../mail-services/helpers/events');
+const guard = require('../../security-services/helpers/tokenGuard');
 
 // ─── WAKATIME + TEAMS OF A USER ───────────────────────────────────────────────
 // One user = one login + (optionally) a tracked developer + teams. The developer
@@ -145,6 +148,12 @@ const addUser = async (req, res) => {
     // Token first: a rejected token stops here, before anything is created
     let token = null;
     if (wakatime?.track && String(wakatime.apiKey ?? '').trim()) {
+      // Setting a token needs the token protection password (Settings › Security)
+      const problem = await guard.checkTokenPassword(req, wakatime.confirmPassword);
+      if (problem) {
+        await transaction.rollback();
+        return res.status(problem.CODE).json({ msg: problem.MESSAGE });
+      }
       token = await verifyAndEncrypt(wakatime.apiKey);
       if (token.error) {
         await transaction.rollback();
@@ -254,6 +263,8 @@ const addUser = async (req, res) => {
             return res.status(status.CODE).json({ msg: status.MESSAGE });
           }
           warning = token.account.timezoneWarning;
+          const devRow = (await execProc('PRC_Get_Developer_List', { pIN_developerId: [sql.Int, dev.developerId] }))[0];
+          if (devRow) sendTokenChangedMail({ developer: devRow, action: 'SET', changedBy: savedBy, via: 'New user' });
         }
       }
     } catch (linkErr) {
@@ -263,10 +274,12 @@ const addUser = async (req, res) => {
 
     const result = await withExtras(getUniqueUsers(createdUser));
 
-    // Welcome mail comes back with the mail service (developer activity report step)
+    // Welcome mail with the next steps (Settings › Welcome Mail); never fails the save
+    const mail = await sendWelcomeMail(user.id, { triggeredBy: `user created · ${savedBy}` });
+
     return res
       .status(USER.CREATED.CODE)
-      .json({ msg: USER.CREATED.MESSAGE, data: result, warning });
+      .json({ msg: USER.CREATED.MESSAGE, data: result, warning, mail });
   } catch (err) {
     if (!transaction.finished) await transaction.rollback();
     console.error('[addUser] error:', err);

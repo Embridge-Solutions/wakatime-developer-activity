@@ -40,6 +40,7 @@ import { useGetScopesQuery } from '@/redux/slice/scopes';
 import RecordedBy, { useLoginUserName } from '@/components/common/RecordedBy';
 import IdMultiSelect from '@/components/activity/IdMultiSelect';
 import TokenField from '@/components/activity/TokenField';
+import PasswordInput from '@/components/activity/PasswordInput';
 import { useGetTeamsQuery } from '@/redux/slice/team';
 
 // ─── Stepper style ─────────────────────────────────────────────────────────────
@@ -176,7 +177,7 @@ const UserCreationPage = () => {
   // Teams & WakaTime (step 3) — the developer side is created in the backend with the user
   const { data: teamsData } = useGetTeamsQuery({ activeOnly: true });
   const teamOptions = (teamsData?.data ?? []).map((t) => ({ id: t.teamId, label: t.teamName }));
-  const EMPTY_WAKA = { teamIds: [] as number[], track: true, developerCode: '', designation: '', apiKey: '' };
+  const EMPTY_WAKA = { teamIds: [] as number[], track: true, developerCode: '', designation: '', apiKey: '', confirmPassword: '' };
   const [waka, setWaka] = useState(EMPTY_WAKA);
   // "Created By" input — starts as the logged-in user; the footer follows what's typed
   const loginName = useLoginUserName();
@@ -249,6 +250,10 @@ const UserCreationPage = () => {
       }
       setActiveStep(2);
     } else if (activeStep === 2) {
+      if (waka.track && waka.apiKey.trim() && !waka.confirmPassword) {
+        showAlert({ status: 'error', message: 'Enter the token protection password to save the WakaTime token.' });
+        return;
+      }
       setActiveStep(3);
     } else if (activeStep === 3) {
       await handleSubmit();
@@ -268,6 +273,7 @@ const UserCreationPage = () => {
           developerCode: waka.developerCode,
           designation: waka.designation,
           apiKey: waka.apiKey.trim() || undefined,
+          confirmPassword: waka.apiKey.trim() ? waka.confirmPassword : undefined,
         },
       };
       const res = await addUser(payload);
@@ -275,6 +281,9 @@ const UserCreationPage = () => {
         showAlert({ status: 'success', message: (res as any)?.data?.msg });
         // e.g. the developer's WakaTime timezone isn't Asia/Kolkata
         if ((res as any)?.data?.warning) showAlert({ status: 'warning', message: (res as any).data.warning });
+        // Welcome mail with the next steps (Settings › Welcome Mail)
+        const mail = (res as any)?.data?.mail as { status: string; message: string } | undefined;
+        if (mail) showAlert({ status: mail.status === 'SENT' ? 'success' : 'warning', message: mail.message });
         setIsDone(true);
         return;
       }
@@ -828,6 +837,16 @@ const UserCreationPage = () => {
                       onChange={(apiKey) => setWaka((w) => ({ ...w, apiKey }))}
                       label='WakaTime access token (optional — can be added later)'
                     />
+                    {waka.apiKey.trim() && (
+                      <PasswordInput
+                        id='wizardTokenPassword'
+                        label='Token protection password'
+                        required
+                        value={waka.confirmPassword}
+                        onChange={(confirmPassword) => setWaka((w) => ({ ...w, confirmPassword }))}
+                        help='Set in Settings › Security. The token change is mailed to the Super Admins and the new user.'
+                      />
+                    )}
                   </div>
                 ) : (
                   <p className='mt-2 text-xs text-gray-500'>

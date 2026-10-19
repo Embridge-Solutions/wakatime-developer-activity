@@ -28,6 +28,7 @@ import {
   XCircle,
   KeyRound,
   Activity,
+  MailPlus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -35,6 +36,7 @@ import { useScopes } from "@/hooks/useScopes";
 import { ConfirmActionDialog } from "@/components/common/confirmationDialog";
 import IdMultiSelect from "@/components/activity/IdMultiSelect";
 import { useGetTeamsQuery } from "@/redux/slice/team";
+import { useSendWelcomeMailMutation } from "@/redux/slice/mail";
 import { hasScope } from "@/utils/auth-store";
 
 // ─── Role badge colour map ────────────────────────────────────────────────────
@@ -164,6 +166,15 @@ const UserPage = () => {
   const { data: teamsData } = useGetTeamsQuery({ activeOnly: true });
   const teamOptions = (teamsData?.data ?? []).map((t) => ({ id: t.teamId, label: t.teamName }));
   const canEditTokens = hasScope("token_update");
+  const [sendWelcome] = useSendWelcomeMailMutation();
+  const resendWelcome = async (row: UserRow) => {
+    try {
+      const res = await sendWelcome(row.id).unwrap();
+      showAlert({ status: "success", message: res.msg });
+    } catch (err: any) {
+      showAlert({ status: "error", message: err?.data?.msg ?? "Welcome mail not sent" });
+    }
+  };
 
   const [formData, setFormData] = useState(initialForm);
   const tableRows = useMemo<UserRow[]>(() => usersData?.data ?? [], [usersData]);
@@ -533,6 +544,17 @@ const UserPage = () => {
               >
                 <Eye className="!h-3.5 !w-3.5" />
               </button>
+              {(canCreate("user") || canUpdate("user")) && row.email && (
+                <button
+                  type="button"
+                  aria-label="Send welcome mail"
+                  data-tip="Send welcome mail"
+                  onClick={() => resendWelcome(row)}
+                  className="ui-btn ui-btn-secondary ui-btn-icon hover:border-[var(--action)] hover:text-[var(--action)]"
+                >
+                  <MailPlus className="!h-3.5 !w-3.5" />
+                </button>
+              )}
               {canEditTokens && row.wakatime?.track && (
                 <button
                   type="button"

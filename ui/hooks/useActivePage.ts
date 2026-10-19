@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { usePageTitleSafe } from '@/contexts/page-title-context';
-import { menuItems, profileMenuData, reportTabs } from '@/config/data-config';
+import { menuItems, profileMenuData, reportTabs, settingsTabs } from '@/config/data-config';
 import { MenuItem } from '@/utils/types';
 
 export interface ActivePage {
@@ -16,7 +16,7 @@ export interface ActivePage {
 const matches = (pathname: string, item: Pick<MenuItem, 'path' | 'subPaths'>) =>
   [item.path, ...(item.subPaths ?? [])].some((p) => p && (pathname === p || pathname.startsWith(`${p}/`)));
 
-const tabGroups = [reportTabs];
+const tabGroups = [reportTabs, settingsTabs];
 
 /** Turns "/daily-report" into "Daily Report". */
 const prettify = (pathname: string) =>

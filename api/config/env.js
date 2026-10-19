@@ -80,4 +80,21 @@ ENV.WAKA_DURATION_SLICES = (process.env.WAKA_DURATION_SLICES || 'project')
   .map((s) => s.trim())
   .filter(Boolean);
 
+// MAIL (SMTP) — secrets live ONLY here (.env), never in the database or the browser.
+// The Settings › Mail Server page shows the status (password never) and can test it.
+ENV.SMTP_HOST = process.env.SMTP_HOST || '';
+ENV.SMTP_PORT = numOr(process.env.SMTP_PORT, 587);
+ENV.SMTP_SECURE = process.env.SMTP_SECURE === 'true'; // true for port 465 (SSL); 587 uses STARTTLS
+ENV.SMTP_USER = process.env.SMTP_USER || '';
+ENV.SMTP_PASSWORD = process.env.SMTP_PASSWORD || '';
+// false only for an internal server with a self-signed certificate
+ENV.SMTP_TLS_REJECT_UNAUTHORIZED = process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false';
+ENV.MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || 'Developer Activity';
+ENV.MAIL_FROM_ADDRESS = process.env.MAIL_FROM_ADDRESS || process.env.SMTP_USER || '';
+ENV.MAIL_TIME_ZONE = process.env.MAIL_TIME_ZONE || ENV.WAKA_TIMEZONE;
+// Set to false on extra API instances (the send guard also prevents duplicates)
+ENV.MAIL_SCHEDULER_ENABLED = process.env.MAIL_SCHEDULER_ENABLED !== 'false';
+// Address of the UI, used for links in mails (login, dashboards)
+ENV.APP_URL = (process.env.APP_URL || `http://${ENV.RUNNING_ORIGIN}:${ENV.RUNNING_PORT}`).replace(/\/+$/, '');
+
 module.exports = ENV;

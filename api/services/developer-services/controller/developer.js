@@ -4,6 +4,15 @@ const { safeNum } = require('../../../utils/safeParam');
 const { sql, execProc } = require('../../../utils/procedure');
 const { isSecretConfigured, encrypt, keyHint } = require('../../wakatime-services/helpers/crypto');
 const { verifyApiKey: checkWithWakaTime, isOAuthToken } = require('../../wakatime-services/helpers/wakaClient');
+const guard = require('../../security-services/helpers/tokenGuard');
+const { sendTokenChangedMail } = require('../../mail-services/helpers/events');
+
+/** Admin token change: the token protection password (Settings › Security). @returns true when an error was sent */
+const deniedTokenPassword = async (req, res) => {
+  const problem = await guard.checkTokenPassword(req, req.body?.confirmPassword);
+  if (problem) send(res, problem);
+  return Boolean(problem);
+};
 
 // ── Developer master ───────────────────────────────────────────────────────
 // Procedures in sql/02_E2M_Developer_Procedures.sql. Insert / update answer a
@@ -130,6 +139,7 @@ const addDeveloper = async (req, res) => {
     let keyParams = {};
     let account = null;
     if (body.apiKey) {
+      if (await deniedTokenPassword(req, res)) return undefined;
       const key = await prepareApiKey(res, body.apiKey);
       if (!key) return undefined;
       keyParams = key.params;
@@ -144,8 +154,10 @@ const addDeveloper = async (req, res) => {
     });
     if (sentResultError(res, row?.resultCode)) return undefined;
 
+    const created = await getById(row.developerId);
+    if (account) sendTokenChangedMail({ developer: created, action: 'SET', changedBy: username(req), via: 'New developer' });
     return send(res, DEVELOPER.CREATED, {
-      data: await getById(row.developerId),
+      data: created,
       warning: account?.timezoneWarning || null,
     });
   } catch (err) {
@@ -223,12 +235,14 @@ const verifyApiKey = async (req, res) => {
   }
 };
 
-// PUT /updateApiKey/:id { apiKey } — verify, encrypt, save
+// PUT /updateApiKey/:id { apiKey, confirmPassword } — token protection password, verify, encrypt, save
 const updateApiKey = async (req, res) => {
   const developerId = safeNum(req.params.id);
   if (!developerId) return send(res, DEVELOPER.NOT_FOUND);
 
   try {
+    if (await deniedTokenPassword(req, res)) return undefined;
+    const before = await getById(developerId);
     const key = await prepareApiKey(res, req.body?.apiKey);
     if (!key) return undefined;
 
@@ -238,8 +252,10 @@ const updateApiKey = async (req, res) => {
       pIN_updatedBy: [sql.NVarChar(100), username(req)],
     });
     if (sentResultError(res, row?.resultCode)) return undefined;
+    const after = await getById(developerId);
+    sendTokenChangedMail({ developer: after, action: before?.hasApiKey ? 'REPLACED' : 'SET', changedBy: username(req), via: 'WakaTime Tokens screen' });
     return send(res, DEVELOPER.API_KEY_UPDATE, {
-      data: await getById(developerId),
+      data: after,
       warning: key.account.timezoneWarning,
     });
   } catch (err) {
@@ -247,25 +263,85 @@ const updateApiKey = async (req, res) => {
   }
 };
 
-// DELETE /removeApiKey/:id — the developer is no longer collected until a new key is saved
+// DELETE /removeApiKey/:id { confirmPassword } — the developer is no longer collected until a new key is saved
 const removeApiKey = async (req, res) => {
   const developerId = safeNum(req.params.id);
   if (!developerId) return send(res, DEVELOPER.NOT_FOUND);
 
   try {
+    if (await deniedTokenPassword(req, res)) return undefined;
+    const before = await getById(developerId);
     const [row] = await execProc('PRC_Update_Developer_Api_Key', {
       pIN_developerId: [sql.Int, developerId],
       pIN_apiKeyEnc: [sql.NVarChar(1000), null],
       pIN_updatedBy: [sql.NVarChar(100), username(req)],
     });
     if (sentResultError(res, row?.resultCode)) return undefined;
+    if (before) sendTokenChangedMail({ developer: before, action: 'REMOVED', changedBy: username(req), via: 'WakaTime Tokens screen' });
     return send(res, DEVELOPER.API_KEY_REMOVED, { data: await getById(developerId) });
   } catch (err) {
     return fail(res, 'removeApiKey', err);
   }
 };
 
+// ── My WakaTime (any logged-in user, only their own developer) ─────────────
+
+const myDeveloper = async (req) => {
+  const [own] = await execProc('PRC_Get_Developer_By_User', { pIN_userId: [sql.Int, req.user?.id] });
+  return own ? getById(own.developerId) : null;
+};
+
+// GET /getMyDeveloper — tracked? token status (never the token)
+const getMyDeveloper = async (req, res) => {
+  try {
+    const me = await myDeveloper(req);
+    return res.json({ success: true, msg: DEVELOPER.SUCCESS.MESSAGE, data: me || null });
+  } catch (err) {
+    return fail(res, 'getMyDeveloper', err);
+  }
+};
+
+// POST /verifyMyApiKey { apiKey } — Test button on My WakaTime
+const verifyMyApiKey = async (req, res) => {
+  try {
+    if (!(await myDeveloper(req))) return send(res, DEVELOPER.NOT_TRACKED);
+    const key = await prepareApiKey(res, req.body?.apiKey);
+    if (!key) return undefined;
+    return send(res, DEVELOPER.API_KEY_VALID, { data: key.account, warning: key.account.timezoneWarning });
+  } catch (err) {
+    return fail(res, 'verifyMyApiKey', err);
+  }
+};
+
+// PUT /updateMyApiKey { apiKey, loginPassword } — the developer saves their own token,
+// confirmed with their own login password (when Settings › Security allows self-service)
+const updateMyApiKey = async (req, res) => {
+  try {
+    const me = await myDeveloper(req);
+    if (!me) return send(res, DEVELOPER.NOT_TRACKED);
+    if (!(await guard.isSelfTokenAllowed())) return send(res, DEVELOPER.SELF_TOKEN_OFF);
+    const problem = await guard.checkLoginPassword(req, req.body?.loginPassword);
+    if (problem) return send(res, problem);
+    const key = await prepareApiKey(res, req.body?.apiKey);
+    if (!key) return undefined;
+    const [row] = await execProc('PRC_Update_Developer_Api_Key', {
+      pIN_developerId: [sql.Int, me.developerId],
+      ...key.params,
+      pIN_updatedBy: [sql.NVarChar(100), username(req)],
+    });
+    if (sentResultError(res, row?.resultCode)) return undefined;
+    const after = await getById(me.developerId);
+    sendTokenChangedMail({ developer: after, action: me.hasApiKey ? 'REPLACED' : 'SET', changedBy: username(req), via: 'My WakaTime (by the developer)' });
+    return send(res, DEVELOPER.API_KEY_UPDATE, { data: after, warning: key.account.timezoneWarning });
+  } catch (err) {
+    return fail(res, 'updateMyApiKey', err);
+  }
+};
+
 module.exports = {
+  getMyDeveloper,
+  verifyMyApiKey,
+  updateMyApiKey,
   getDevelopers,
   getDeveloper,
   addDeveloper,

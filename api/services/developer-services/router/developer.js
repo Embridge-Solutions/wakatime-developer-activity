@@ -14,6 +14,11 @@ router.put("/updateDeveloper/:id", [auth, requireScope("user_update")], controll
 router.put("/updateStatus/:id", [auth, requireScope("user_update")], controller.updateStatus);
 router.delete("/deleteDeveloper/:id", [auth, requireScope("user_delete")], controller.deleteDeveloper);
 
+// My WakaTime — any logged-in user, only their own developer (Profile › My WakaTime)
+router.get("/getMyDeveloper", [auth], controller.getMyDeveloper);
+router.post("/verifyMyApiKey", [auth], controller.verifyMyApiKey);
+router.put("/updateMyApiKey", [auth], controller.updateMyApiKey);
+
 // WakaTime API key (API key screen)
 router.post("/verifyApiKey", [auth, requireScope("token_update", "user_create", "user_update")], controller.verifyApiKey);
 router.put("/updateApiKey/:id", [auth, requireScope("token_update")], controller.updateApiKey);

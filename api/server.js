@@ -92,6 +92,9 @@ server.listen(PORT, () => {
 
   // Nightly WakaTime developer activity collection (WAKA_SYNC_CRON in .env, default 9 PM)
   require('./services/wakatime-services/helpers/scheduler').startWakaSyncScheduler();
+
+  // Weekly report mails (schedule from Settings › Weekly Reports, default Monday 09:30)
+  require('./services/mail-services/helpers/scheduler').startMailScheduler();
 });
 
 // Graceful shutdown handling to release the port quickly

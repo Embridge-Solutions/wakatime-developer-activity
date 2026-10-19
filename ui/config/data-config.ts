@@ -1,7 +1,14 @@
 import { MenuItem, ProfileMenuItems } from '@/utils/types';
 import {
   Bot,
+  CalendarClock,
   CalendarDays,
+  Database,
+  History,
+  MailPlus,
+  Server,
+  ShieldCheck,
+  Settings,
   ChartLine,
   FolderGit2,
   KeyRound,
@@ -55,24 +62,12 @@ export const menuItems: MenuItem[] = [
     access: 'report',
     subPaths: ['/daily-report', '/developer-report', '/project-report', '/tools-report', '/ai-report'],
   },
-  {
-    icon: Users,
-    label: 'Users',
-    path: '/user',
-    access: 'user',
-    subPaths: ['/user-creation'],
-  },
+
   {
     icon: UsersRound,
     label: 'Teams',
     path: '/teams',
     access: 'team',
-  },
-  {
-    icon: UserCog,
-    label: 'Roles',
-    path: '/role',
-    access: 'role',
   },
   {
     icon: KeyRound,
@@ -86,6 +81,36 @@ export const menuItems: MenuItem[] = [
     path: '/data-sync',
     access: 'sync',
   },
+    {
+    icon: Users,
+    label: 'Users',
+    path: '/user',
+    access: 'user',
+    subPaths: ['/user-creation'],
+  },
+    {
+    icon: UserCog,
+    label: 'Roles',
+    path: '/role',
+    access: 'role',
+  },
+  {
+    icon: Settings,
+    label: 'Settings',
+    path: '/mail-server',
+    access: 'settings',
+    subPaths: ['/mail-server', '/weekly-report', '/welcome-mail', '/mail-history', '/data-collection', '/security-settings'],
+  },
+];
+
+/** Settings tabs (scope settings_view; changing needs settings_update). */
+export const settingsTabs: MenuItem[] = [
+  { icon: Server, label: 'Mail Server', path: '/mail-server' },
+  { icon: CalendarClock, label: 'Weekly Reports', path: '/weekly-report' },
+  { icon: MailPlus, label: 'Welcome Mail', path: '/welcome-mail' },
+  { icon: History, label: 'Mail History', path: '/mail-history' },
+  { icon: Database, label: 'Data Collection', path: '/data-collection' },
+  { icon: ShieldCheck, label: 'Security', path: '/security-settings' },
 ];
 
 /** Top menu for the reports (each has Excel / CSV / PDF export on its table). */
@@ -128,6 +153,12 @@ export const profileMenuData: ProfileMenuItems[] = [
     icon: Lock,
     label: 'Login & Password',
     path: '/change-password',
+    navigation: true,
+  },
+  {
+    icon: KeyRound,
+    label: 'My WakaTime',
+    path: '/my-wakatime',
     navigation: true,
   },
   {

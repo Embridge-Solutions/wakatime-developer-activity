@@ -30,6 +30,8 @@ The API's `RUNNING_ORIGIN` / `RUNNING_PORT` (or `CORS_ORIGINS`) must allow the U
 | Roles | `/role` | `role_*` |
 | WakaTime Tokens | `/wakatime-tokens` | `token_view` / `token_update` |
 | Data Sync | `/data-sync` | `sync_view` / `sync_run` |
+| Settings | `/mail-server`, `/weekly-report`, `/welcome-mail`, `/mail-history`, `/data-collection`, `/security-settings` | `settings_view` (changes: `settings_update`) |
+| Profile › My WakaTime | `/my-wakatime` | every user — connect their own WakaTime token |
 
 Data: with `activity_viewall` a user sees every developer; without it only their own (enforced by the API).
 After login each user lands on the first screen they may open (`/start`): admins → Team Dashboard, developers → My Dashboard.

@@ -77,17 +77,31 @@ export const developerSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Developer', 'Activity'],
     }),
 
+    // My WakaTime — the logged-in user's own developer
+    getMyDeveloper: builder.query<Envelope<Developer | null>, void>({
+      query: () => ({ url: '/developer/getMyDeveloper' }),
+      providesTags: ['Developer'],
+    }),
+    verifyMyApiKey: builder.mutation<Envelope<WakaAccount>, string>({
+      query: (apiKey) => ({ url: '/developer/verifyMyApiKey', method: 'POST', body: { apiKey } }),
+    }),
+    updateMyApiKey: builder.mutation<Envelope<Developer>, { apiKey: string; loginPassword: string }>({
+      query: (body) => ({ url: '/developer/updateMyApiKey', method: 'PUT', body }),
+      invalidatesTags: ['Developer', 'Activity'],
+    }),
+
     verifyApiKey: builder.mutation<Envelope<WakaAccount>, string>({
       query: (apiKey) => ({ url: '/developer/verifyApiKey', method: 'POST', body: { apiKey } }),
     }),
 
-    updateApiKey: builder.mutation<Envelope<Developer>, { id: number; apiKey: string }>({
-      query: ({ id, apiKey }) => ({ url: `/developer/updateApiKey/${id}`, method: 'PUT', body: { apiKey } }),
+    /** confirmPassword = the token protection password (Settings › Security) */
+    updateApiKey: builder.mutation<Envelope<Developer>, { id: number; apiKey: string; confirmPassword: string }>({
+      query: ({ id, ...body }) => ({ url: `/developer/updateApiKey/${id}`, method: 'PUT', body }),
       invalidatesTags: ['Developer'],
     }),
 
-    removeApiKey: builder.mutation<Envelope<Developer>, number>({
-      query: (id) => ({ url: `/developer/removeApiKey/${id}`, method: 'DELETE' }),
+    removeApiKey: builder.mutation<Envelope<Developer>, { id: number; confirmPassword: string }>({
+      query: ({ id, confirmPassword }) => ({ url: `/developer/removeApiKey/${id}`, method: 'DELETE', body: { confirmPassword } }),
       invalidatesTags: ['Developer'],
     }),
   }),
@@ -103,4 +117,7 @@ export const {
   useVerifyApiKeyMutation,
   useUpdateApiKeyMutation,
   useRemoveApiKeyMutation,
+  useGetMyDeveloperQuery,
+  useVerifyMyApiKeyMutation,
+  useUpdateMyApiKeyMutation,
 } = developerSlice;

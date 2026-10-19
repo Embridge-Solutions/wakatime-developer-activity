@@ -1,16 +1,18 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ExternalLink, KeyRound, Trash2 } from 'lucide-react';
 import PageWrapper from '@/components/layout/pageWrapper';
 import Table, { TableColumn } from '@/components/table';
 import DialogComponent from '@/components/layout/dialogComponent';
-import { ConfirmActionDialog } from '@/components/common/confirmationDialog';
 import { showAlert } from '@/components/common/AlertHandler';
 import TokenField, { WAKATIME_TOKEN_URL } from '@/components/activity/TokenField';
+import PasswordInput from '@/components/activity/PasswordInput';
 import { fmtDateTime } from '@/components/activity/format';
 import { Developer, useGetDevelopersQuery, useRemoveApiKeyMutation, useUpdateApiKeyMutation } from '@/redux/slice/developer';
+import { useGetSecurityQuery } from '@/redux/slice/security';
 import { hasScope } from '@/utils/auth-store';
 
 const STATUS: Record<Developer['keyStatus'], { text: string; tone: string }> = {
@@ -22,6 +24,7 @@ const STATUS: Record<Developer['keyStatus'], { text: string; tone: string }> = {
 /**
  * One screen for every developer's WakaTime access token: set or replace
  * (checked with WakaTime first, stored encrypted), test, or remove.
+ * Every change needs the token protection password (Settings › Security).
  */
 function TokensScreen() {
   const params = useSearchParams();
@@ -34,16 +37,21 @@ function TokensScreen() {
   const [editing, setEditing] = useState<Developer | null>(null);
   const [token, setToken] = useState('');
   const [removeFor, setRemoveFor] = useState<Developer | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const { data: security } = useGetSecurityQuery(undefined, { skip: !canEdit });
+  const passwordReady = security?.data?.tokenPassword.isSet ?? true;
+  const openEdit = (d: Developer | null) => {
+    setEditing(d);
+    setToken('');
+    setConfirmPassword('');
+  };
 
   // /wakatime-tokens?developerId=3 (from the Users screen) opens that developer's token dialog
   const preselect = Number(params.get('developerId'));
   useEffect(() => {
     if (canEdit && preselect && developers.length && !editing) {
       const d = developers.find((x) => x.developerId === preselect);
-      if (d) {
-        setEditing(d);
-        setToken('');
-      }
+      if (d) openEdit(d);
     }
     // only when the list first arrives
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,26 +67,39 @@ function TokensScreen() {
     e.preventDefault();
     if (!editing) return;
     try {
-      const res = await updateApiKey({ id: editing.developerId, apiKey: token.trim() }).unwrap();
+      const res = await updateApiKey({ id: editing.developerId, apiKey: token.trim(), confirmPassword }).unwrap();
       showAlert({ status: 'success', message: res.msg });
       if (res.warning) showAlert({ status: 'warning', message: res.warning });
-      setEditing(null);
-      setToken('');
+      openEdit(null);
     } catch (err: any) {
       showAlert({ status: 'error', message: err?.data?.msg ?? 'Could not save the token' });
     }
   };
 
-  const remove = async () => {
+  const remove = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!removeFor) return;
     try {
-      const res = await removeApiKey(removeFor.developerId).unwrap();
+      const res = await removeApiKey({ id: removeFor.developerId, confirmPassword }).unwrap();
       showAlert({ status: 'success', message: res.msg });
+      setRemoveFor(null);
+      setConfirmPassword('');
     } catch (err: any) {
+      // wrong password: keep the dialog open to try again
       showAlert({ status: 'error', message: err?.data?.msg ?? 'Could not remove the token' });
     }
-    setRemoveFor(null);
   };
+
+  const passwordField = (
+    <PasswordInput
+      id="tokenConfirmPassword"
+      label="Token protection password"
+      required
+      value={confirmPassword}
+      onChange={setConfirmPassword}
+      help="Set by your admin in Settings › Security. Every change is mailed to the Super Admins and the developer."
+    />
+  );
 
   const columns: TableColumn<Developer>[] = [
     { key: 'developerId', label: 'Id', display: 'excluded' },
@@ -128,6 +149,16 @@ function TokensScreen() {
       onRefresh={refetch}
       noCard
     >
+      {canEdit && !passwordReady && (
+        <div className="ui-status-card mb-3" data-tone="warning">
+          <p className="text-sm font-semibold text-slate-800">Set the token protection password first</p>
+          <p className="mt-0.5 text-[13px] text-slate-600">
+            Tokens cannot be added, replaced or removed until it is set in{' '}
+            <Link href="/security-settings" className="font-semibold underline">Settings › Security</Link>.
+          </p>
+        </div>
+      )}
+
       <div className="mb-3 grid gap-3 lg:grid-cols-[1fr_auto]">
         <div className="ui-status-card" data-tone="info">
           <p className="text-sm font-semibold text-slate-800">How a developer gets their token</p>
@@ -167,16 +198,16 @@ function TokensScreen() {
             <button
               type="button"
               className="ui-btn ui-btn-secondary ui-btn-sm"
-              onClick={() => {
-                setEditing(d);
-                setToken('');
-              }}
+              onClick={() => openEdit(d)}
             >
               <KeyRound className="h-3.5 w-3.5" />
               {d.hasApiKey ? 'Replace' : 'Set token'}
             </button>
             {d.hasApiKey && (
-              <button type="button" aria-label="Remove token" data-tip="Remove token" className="ui-btn ui-btn-secondary ui-btn-icon" onClick={() => setRemoveFor(d)}>
+              <button type="button" aria-label="Remove token" data-tip="Remove token" className="ui-btn ui-btn-secondary ui-btn-icon" onClick={() => {
+                  setRemoveFor(d);
+                  setConfirmPassword('');
+                }}>
                 <Trash2 className="!h-3.5 !w-3.5 text-rose-600" />
               </button>
             )}
@@ -186,7 +217,7 @@ function TokensScreen() {
 
       <DialogComponent
         showDialog={!!editing}
-        setShowDialog={(open) => !open && setEditing(null)}
+        setShowDialog={(open) => !open && openEdit(null)}
         title={editing?.hasApiKey ? 'Update WakaTime Token' : 'Create WakaTime Token'}
         eyebrow={editing?.developerName}
         description={
@@ -201,19 +232,29 @@ function TokensScreen() {
         saveButtonLabel="Verify & Save"
         onSubmit={save}
       >
-        <TokenField value={token} onChange={setToken} required />
+        <div className="space-y-3">
+          <TokenField value={token} onChange={setToken} required />
+          {passwordField}
+        </div>
       </DialogComponent>
 
-      <ConfirmActionDialog
-        open={!!removeFor}
-        onClose={() => setRemoveFor(null)}
-        onConfirm={remove}
-        loading={removing}
-        title="Remove token"
-        message={`Remove ${removeFor?.developerName}'s WakaTime token? Their activity will not be collected until a new token is saved.`}
-        confirmLabel="Yes, Remove"
-        confirmColor="bg-red-600 hover:bg-red-700"
-      />
+      <DialogComponent
+        showDialog={!!removeFor}
+        setShowDialog={(open) => !open && setRemoveFor(null)}
+        title="Remove WakaTime Token"
+        eyebrow={removeFor?.developerName}
+        description={`Remove ${removeFor?.developerName}'s token? Their activity will not be collected until a new token is saved.`}
+        recordedBy="Removed by"
+        size="md"
+        asForm
+        showSaveButton
+        isSaving={removing}
+        saveButtonLabel="Yes, Remove"
+        saveButtonBg="!bg-red-600 hover:!bg-red-700"
+        onSubmit={remove}
+      >
+        {passwordField}
+      </DialogComponent>
     </PageWrapper>
   );
 }

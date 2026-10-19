@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, ExternalLink, Eye, EyeOff, Loader2, XCircle } from 'lucide-react';
-import { useVerifyApiKeyMutation, WakaAccount } from '@/redux/slice/developer';
+import { useVerifyApiKeyMutation, useVerifyMyApiKeyMutation, WakaAccount } from '@/redux/slice/developer';
 
 export const WAKATIME_TOKEN_URL = 'https://wakatime.com/oauth';
 
@@ -16,14 +16,20 @@ export default function TokenField({
   onChange,
   required = false,
   label = 'WakaTime access token',
+  self = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
   label?: string;
+  /** My WakaTime: the Test button checks with the user's own endpoint */
+  self?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
-  const [verify, { isLoading }] = useVerifyApiKeyMutation();
+  const [verifyAdmin, { isLoading: adminLoading }] = useVerifyApiKeyMutation();
+  const [verifyMine, { isLoading: mineLoading }] = useVerifyMyApiKeyMutation();
+  const verify = self ? verifyMine : verifyAdmin;
+  const isLoading = adminLoading || mineLoading;
   const [result, setResult] = useState<{ ok: boolean; msg: string; account?: WakaAccount } | null>(null);
 
   const test = async () => {
@@ -76,11 +82,11 @@ export default function TokenField({
       </div>
 
       <p className="mt-1.5 text-[12px] leading-relaxed text-slate-500">
-        The developer opens{' '}
+        {self ? 'Open' : 'The developer opens'}{' '}
         <a href={WAKATIME_TOKEN_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-semibold underline">
           wakatime.com/oauth <ExternalLink className="h-3 w-3" />
         </a>{' '}
-        while signed in and copies the token (starts with <code>waka_tok_</code>). The secret API key from WakaTime settings
+        while signed in {self ? 'and copy' : 'and copies'} the token (starts with <code>waka_tok_</code>). The secret API key from WakaTime settings
         is write-only and cannot read data.
       </p>
 

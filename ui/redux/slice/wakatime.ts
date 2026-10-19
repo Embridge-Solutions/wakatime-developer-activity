@@ -48,6 +48,21 @@ export interface SyncNowInput {
   days?: number;
 }
 
+/** Data collection settings of the server (read-only) */
+export interface WakaConfig {
+  syncEnabled: boolean;
+  syncCron: string;
+  timezone: string;
+  lookbackDays: number;
+  liveCron: string;
+  activeMinutes: number;
+  fetchProjectDetails: boolean;
+  fetchCommits: boolean;
+  durationSlices: string[];
+  apiMinIntervalMs: number;
+  tokenSecretConfigured: boolean;
+}
+
 type Envelope<T> = { success: boolean; msg: string; data: T };
 
 export const wakatimeSlice = apiSlice.injectEndpoints({
@@ -71,8 +86,12 @@ export const wakatimeSlice = apiSlice.injectEndpoints({
       query: (params) => ({ url: '/wakatime/getSyncLogs', params: params || undefined }),
       providesTags: ['Sync'],
     }),
+
+    getWakaConfig: builder.query<Envelope<WakaConfig>, void>({
+      query: () => ({ url: '/wakatime/getConfig' }),
+    }),
   }),
   overrideExisting: true,
 });
 
-export const { useSyncNowMutation, useGetSyncStatusQuery, useGetSyncRunsQuery, useGetSyncLogsQuery } = wakatimeSlice;
+export const { useSyncNowMutation, useGetSyncStatusQuery, useGetSyncRunsQuery, useGetSyncLogsQuery, useGetWakaConfigQuery } = wakatimeSlice;

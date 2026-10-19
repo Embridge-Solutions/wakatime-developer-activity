@@ -87,4 +87,27 @@ const getSyncLogs = async (req, res) => {
   }
 };
 
-module.exports = { syncNow, getSyncStatus, getSyncRuns, getSyncLogs };
+// GET /getConfig — data collection settings from .env (read-only on Settings › Data Collection)
+const getConfig = (req, res) => {
+  const ENV = require('../../../config/env');
+  const { isSecretConfigured } = require('../helpers/crypto');
+  return res.json({
+    success: true,
+    msg: WAKATIME.SUCCESS.MESSAGE,
+    data: {
+      syncEnabled: ENV.WAKA_SYNC_ENABLED,
+      syncCron: ENV.WAKA_SYNC_CRON,
+      timezone: ENV.WAKA_TIMEZONE,
+      lookbackDays: ENV.WAKA_LOOKBACK_DAYS,
+      liveCron: ENV.WAKA_LIVE_CRON,
+      activeMinutes: ENV.WAKA_ACTIVE_MINUTES,
+      fetchProjectDetails: ENV.WAKA_FETCH_PROJECT_DETAILS,
+      fetchCommits: ENV.WAKA_FETCH_COMMITS,
+      durationSlices: ENV.WAKA_DURATION_SLICES,
+      apiMinIntervalMs: ENV.WAKA_API_MIN_INTERVAL_MS,
+      tokenSecretConfigured: isSecretConfigured(),
+    },
+  });
+};
+
+module.exports = { syncNow, getSyncStatus, getSyncRuns, getSyncLogs, getConfig };
